@@ -210,20 +210,28 @@ int main(int argc, char **argv)
                     else
                         msg.steering_wheel = 0;
 
+                    /*********************************************/
+                    // 增加单个开关以请求进入转向自动控制模式
+                    // 开关D 向上拨为0  向下拨为1
                     if(channel_value[9]<500)
                         msg.Enter_steering_control = 0;
                     else if(channel_value[9]>1500)
                         msg.Enter_steering_control = 1;
                     else
                         msg.Enter_steering_control = 0;
+                    /*********************************************/
 
                     string str1;
                     str1 = "steering_wheel: " + std::to_string(msg.steering_wheel);
                     cv::putText(image,str1,cv::Point2d(50,50),1,1,cv::Scalar(0,0,0));
 
+                    /*********************************************/
+                    // 增加显示
                     string str2;
                     str2 = "Enter_steering_control: "+std::to_string(msg.Enter_steering_control);
                     cv::putText(image,str2,cv::Point2d(50,100),1,1,cv::Scalar(0,0,0));
+                    /*********************************************/
+
                     cv::imshow("image",image);
                     cv::waitKey(1);
                     rx_flag = -1;
