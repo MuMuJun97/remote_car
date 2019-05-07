@@ -1,0 +1,4 @@
+/.idea/
+# 忽略根目录.idea目录下的文件
+/cmake-build-debug/
+*~
