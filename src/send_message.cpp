@@ -65,6 +65,7 @@ int main(int argc, char **argv)
             while((result<40)&&(while_count<10)){
                 result = test_serial.read(buffer,size);
                 while_count++;
+                usleep(1000);
             }
 
             std::cout<<"get buffer num : "<<result<<std::endl;
@@ -219,6 +220,64 @@ int main(int argc, char **argv)
                         msg.Enter_steering_control = 1;
                     else
                         msg.Enter_steering_control = 0;
+
+                    //增加左手 油门 刹车 急刹 档位
+                    /*!
+                     * @note: 刹车 往前374 中间
+                     * @note: 急刹 开关F 往上拨 1； 往下拨 0
+                     * */
+                    msg.accelerator = 0 ; //油门 int16_t 0-2000
+                    msg.emergency_braking = 0 ; //急刹 开关F 向上拨急刹1 向下拨:正常状态0
+                    msg.brake = 0; //刹车 float 32位 0-99.0
+                    msg.gear = 0 ; //档位 开关C 中间-0空挡 向前拨-1前进档 向后拨-2后退档
+
+                    int16_t brake_accelerator_ = (int16_t)channel_value[1];
+                    int16_t emergency_braking_ = (int16_t)channel_value[4];
+                    int16_t gear_ = (int16_t)channel_value[6];
+
+                    if(gear_<200)
+                    {
+                        if(brake_accelerator_>=1050 && brake_accelerator_<=1688){
+                            msg.accelerator = (brake_accelerator_-1050)*3;
+                        }
+                        else
+                            msg.accelerator = 0 ;
+
+                        msg.gear = 1; //前进档
+                    }
+                    else if(gear_>1800)
+                    {
+                        if(brake_accelerator_>=1050 && brake_accelerator_<=1688){
+                            msg.accelerator = -(brake_accelerator_-1050)*3;
+                        }
+                        else
+                            msg.accelerator = 0 ;
+
+                        msg.gear = 2; //后退档
+                    }
+                    else{
+                        msg.gear = 0; //空挡
+                    }
+
+
+                    if(emergency_braking_<200)
+                    {
+                        //正常控制状态
+                        if(brake_accelerator_<=1020 && brake_accelerator_>=374){
+                            msg.brake = float(1020.-brake_accelerator_)*99./646. ;
+                            msg.accelerator = 0;
+                        }
+                        msg.emergency_braking = 0 ; //非急刹
+                    }
+                    else if (emergency_braking_>1800)
+                    {
+                        //急刹
+                        msg.accelerator = 0; //油门给0
+                        msg.brake = 99.0 ;  //刹车给满
+                        msg.emergency_braking = 1 ; //急刹
+                    }
+                    else ;
+
                     /*********************************************/
 
                     string str1;
@@ -230,6 +289,20 @@ int main(int argc, char **argv)
                     string str2;
                     str2 = "Enter_steering_control: "+std::to_string(msg.Enter_steering_control);
                     cv::putText(image,str2,cv::Point2d(50,100),1,1,cv::Scalar(0,0,0));
+                    string str3;
+                    str3 = "accelerator: "+std::to_string(msg.accelerator);
+                    cv::putText(image,str3,cv::Point2d(50,150),1,1,cv::Scalar(0,0,0));
+                    string str4;
+                    str4 = "emergency_braking: "+std::to_string(msg.emergency_braking);
+                    cv::putText(image,str4,cv::Point2d(50,200),1,1,cv::Scalar(0,0,0));
+
+                    string str5;
+                    str4 = "brake: "+std::to_string(msg.brake);
+                    cv::putText(image,str4,cv::Point2d(50,250),1,1,cv::Scalar(0,0,0));
+
+                    string str6;
+                    str4 = "gear: "+std::to_string(msg.gear);
+                    cv::putText(image,str4,cv::Point2d(50,300),1,1,cv::Scalar(0,0,0));
                     /*********************************************/
 
                     cv::imshow("image",image);
